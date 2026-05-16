@@ -101,6 +101,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(f"❌ Error: {e}")
 
 # 🚀 App start
+print("BOT TOKEN:", BOT_TOKEN)
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_link))
