@@ -11,7 +11,7 @@ import yt_dlp
 import os
 
 # ✅ Token from Render / Environment variable
-BOT_TOKEN = "8831824476:AAEfmV0FQJmb1RBoCqvG6Xz0qcmXyjgWE9M"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
