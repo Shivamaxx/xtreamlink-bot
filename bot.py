@@ -65,75 +65,45 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_text("⏳ Downloading...")
 
-    # cookies.txt optional — sirf tab use karo jab file exist kare
     cookie_opts = {}
     if os.path.exists('cookies.txt'):
         cookie_opts['cookiefile'] = 'cookies.txt'
 
-     try:
-        # Common base opts
-        base_opts = {
-            'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-            'quiet': True,
-            'no_warnings': True,
-            'ignoreerrors': False,
-            # YouTube bot detection se bachne ke liye
-            'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
-            **cookie_opts,
-        }
-
+    try:
         if quality == "mp3":
             ydl_opts = {
-                **base_opts,
-                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
+                'format': 'bestaudio/best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                **cookie_opts,
             }
         elif quality == "360":
             ydl_opts = {
-                **base_opts,
-                # Sabse broad fallback chain
-                'format': (
-                    'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]'
-                    '/bestvideo[height<=360][ext=webm]+bestaudio[ext=webm]'
-                    '/bestvideo[height<=360]+bestaudio'
-                    '/best[height<=360]'
-                    '/worst'  # kuch bhi mile download ho jaye
-                ),
-                'merge_output_format': 'mp4',
+                'format': 'best[height<=360]/best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                **cookie_opts,
             }
         elif quality == "720":
             ydl_opts = {
-                **base_opts,
-                'format': (
-                    'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]'
-                    '/bestvideo[height<=720][ext=webm]+bestaudio[ext=webm]'
-                    '/bestvideo[height<=720]+bestaudio'
-                    '/best[height<=720]'
-                    '/best'
-                ),
-                'merge_output_format': 'mp4',
+                'format': 'best[height<=720]/best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                **cookie_opts,
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            # prepare_filename se base path lo
             base_path = ydl.prepare_filename(info)
             base_no_ext = os.path.splitext(base_path)[0]
 
         if quality == "mp3":
             file_path = base_no_ext + ".mp3"
         else:
-            # merge ke baad .mp4 hoga, but agar directly download hua toh original ext
-            # glob se dhundho jo bhi file mili ho
             mp4_path = base_no_ext + ".mp4"
             if os.path.exists(mp4_path):
                 file_path = mp4_path
             else:
-                # koi bhi matching file dhoondo
                 matches = glob.glob(base_no_ext + ".*")
                 if matches:
                     file_path = matches[0]
@@ -151,7 +121,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(file_path, "rb") as video:
                 await query.message.reply_video(video=video)
 
-        # cleanup
         user_links.pop(chat_id, None)
         if os.path.exists(file_path):
             os.remove(file_path)
