@@ -88,7 +88,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             }
         else:
             ydl_opts = {
-                'format': f'best[height<={quality}]',
+                'format': f'bestvideo[height<={quality}]+bestaudio/best/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'merge_output_format': 'mp4',
                 'quiet': True,
