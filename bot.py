@@ -79,6 +79,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'format': 'bestaudio/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'quiet': True,
+                'cookiefile': 'cookies.txt',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -91,6 +92,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'merge_output_format': 'mp4',
                 'quiet': True,
+                'cookiefile': 'cookies.txt',
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
