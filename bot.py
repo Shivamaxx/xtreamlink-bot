@@ -1,6 +1,9 @@
 import asyncio
 asyncio.set_event_loop(asyncio.new_event_loop())
 
+from flask import Flask
+from threading import Thread
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -12,6 +15,16 @@ from telegram.ext import (
 
 import yt_dlp
 import os
+app_web = Flask('')
+
+@app_web.route('/')
+def home():
+    return "Bot is running!"
+
+def run():
+    app_web.run(host='0.0.0.0', port=10000)
+
+Thread(target=run).start()
 
 # ✅ Token from Render / Environment variable
 BOT_TOKEN = os.getenv("BOT_TOKEN")
