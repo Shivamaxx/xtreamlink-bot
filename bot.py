@@ -74,8 +74,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
             'quiet': True,
             'no_warnings': True,
-            'username': 'oauth2',
-            'password': '',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['android'],
