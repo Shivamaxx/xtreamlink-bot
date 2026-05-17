@@ -90,7 +90,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ydl_opts = {
                 'format': 'best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'merge_output_format': 'mp4',
                 'quiet': True,
                 'cookiefile': 'cookies.txt',
             }
