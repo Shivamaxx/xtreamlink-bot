@@ -68,28 +68,37 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cookie_opts = {}
     if os.path.exists('cookies.txt'):
         cookie_opts['cookiefile'] = 'cookies.txt'
+        print("✅ cookies.txt FOUND")
+    else:
+        print("❌ cookies.txt NOT FOUND")
 
     try:
+        common = {
+            'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['web'],
+                    'skip': ['hls', 'dash'],
+                }
+            },
+            **cookie_opts,
+        }
         if quality == "mp3":
             ydl_opts = {
+                **common,
                 'format': 'bestaudio/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
             }
         elif quality == "360":
             ydl_opts = {
+                **common,
                 'format': 'best[height<=360]/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
             }
         elif quality == "720":
             ydl_opts = {
+                **common,
                 'format': 'best[height<=720]/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
