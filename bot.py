@@ -70,27 +70,52 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if os.path.exists('cookies.txt'):
         cookie_opts['cookiefile'] = 'cookies.txt'
 
-   try:
+     try:
+        # Common base opts
+        base_opts = {
+            'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'ignoreerrors': False,
+            # YouTube bot detection se bachne ke liye
+            'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
+            **cookie_opts,
+        }
+
         if quality == "mp3":
             ydl_opts = {
-                'format': 'bestaudio/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
+                **base_opts,
+                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
             }
         elif quality == "360":
             ydl_opts = {
-                'format': 'best[height<=360]/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
+                **base_opts,
+                # Sabse broad fallback chain
+                'format': (
+                    'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]'
+                    '/bestvideo[height<=360][ext=webm]+bestaudio[ext=webm]'
+                    '/bestvideo[height<=360]+bestaudio'
+                    '/best[height<=360]'
+                    '/worst'  # kuch bhi mile download ho jaye
+                ),
+                'merge_output_format': 'mp4',
             }
         elif quality == "720":
             ydl_opts = {
-                'format': 'best[height<=720]/best',
-                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'quiet': True,
-                **cookie_opts,
+                **base_opts,
+                'format': (
+                    'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]'
+                    '/bestvideo[height<=720][ext=webm]+bestaudio[ext=webm]'
+                    '/bestvideo[height<=720]+bestaudio'
+                    '/best[height<=720]'
+                    '/best'
+                ),
+                'merge_output_format': 'mp4',
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
