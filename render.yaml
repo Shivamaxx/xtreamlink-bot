@@ -1,6 +1,6 @@
 services:
   - type: web
     name: telegram-bot
-    runtime: python
-    buildCommand: "pip install -r requirements.txt && apt-get install -y ffmpeg"
-    startCommand: "python bot.py"
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
