@@ -68,9 +68,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cookie_opts = {}
     if os.path.exists('cookies.txt'):
         cookie_opts['cookiefile'] = 'cookies.txt'
-        print("✅ cookies.txt FOUND")
-    else:
-        print("❌ cookies.txt NOT FOUND")
 
     try:
         common = {
@@ -79,8 +76,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'no_warnings': True,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web'],
-                    'skip': ['hls', 'dash'],
+                    'player_client': ['android'],
                 }
             },
             **cookie_opts,
