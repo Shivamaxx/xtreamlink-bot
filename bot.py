@@ -1,9 +1,7 @@
 import asyncio
 asyncio.set_event_loop(asyncio.new_event_loop())
-
 from flask import Flask
 from threading import Thread
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -12,9 +10,10 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-
 import yt_dlp
 import os
+import glob
+
 app_web = Flask('')
 
 @app_web.route('/')
@@ -26,19 +25,15 @@ def run():
 
 Thread(target=run).start()
 
-# ✅ Token from Render / Environment variable
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# store user links temporarily
 user_links = {}
 
 async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = update.message.text
     chat_id = update.message.chat.id
-
     user_links[chat_id] = url
 
     keyboard = [
@@ -50,9 +45,7 @@ async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("🎵 MP3", callback_data="mp3"),
         ],
     ]
-
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     await update.message.reply_text(
         "Choose download format:",
         reply_markup=reply_markup
@@ -64,7 +57,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     quality = query.data
     chat_id = query.message.chat.id
-
     url = user_links.get(chat_id)
 
     if not url:
@@ -73,33 +65,68 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_text("⏳ Downloading...")
 
+    # cookies.txt optional — sirf tab use karo jab file exist kare
+    cookie_opts = {}
+    if os.path.exists('cookies.txt'):
+        cookie_opts['cookiefile'] = 'cookies.txt'
+
     try:
         if quality == "mp3":
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'quiet': True,
-                'cookiefile': 'cookies.txt',
+                **cookie_opts,
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
             }
-        else:
+        elif quality == "360":
             ydl_opts = {
-                'format': 'best',
+                # 360p prefer karo, nahi mila toh best available le lo
+                'format': 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'merge_output_format': 'mp4',
                 'quiet': True,
-                'cookiefile': 'cookies.txt',
+                **cookie_opts,
+            }
+        elif quality == "720":
+            ydl_opts = {
+                # 720p prefer karo, nahi mila toh best available le lo
+                'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'merge_output_format': 'mp4',
+                'quiet': True,
+                **cookie_opts,
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
+            # prepare_filename se base path lo
+            base_path = ydl.prepare_filename(info)
+            base_no_ext = os.path.splitext(base_path)[0]
 
-            if quality == "mp3":
-                file_path = os.path.splitext(file_path)[0] + ".mp3"
+        if quality == "mp3":
+            file_path = base_no_ext + ".mp3"
+        else:
+            # merge ke baad .mp4 hoga, but agar directly download hua toh original ext
+            # glob se dhundho jo bhi file mili ho
+            mp4_path = base_no_ext + ".mp4"
+            if os.path.exists(mp4_path):
+                file_path = mp4_path
+            else:
+                # koi bhi matching file dhoondo
+                matches = glob.glob(base_no_ext + ".*")
+                if matches:
+                    file_path = matches[0]
+                else:
+                    file_path = base_path
+
+        if not os.path.exists(file_path):
+            await query.message.reply_text("❌ File download nahi hui. Dobara try karo.")
+            return
 
         if quality == "mp3":
             with open(file_path, "rb") as audio:
@@ -108,21 +135,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(file_path, "rb") as video:
                 await query.message.reply_video(video=video)
 
-        # ✅ cleanup
+        # cleanup
         user_links.pop(chat_id, None)
-
         if os.path.exists(file_path):
             os.remove(file_path)
 
     except Exception as e:
         await query.message.reply_text(f"❌ Error: {e}")
 
-# 🚀 App start
 print("BOT TOKEN:", BOT_TOKEN)
 app = ApplicationBuilder().token(BOT_TOKEN).build()
-
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_link))
 app.add_handler(CallbackQueryHandler(button_click))
-
 print("🚀 Bot Running...")
 app.run_polling()
