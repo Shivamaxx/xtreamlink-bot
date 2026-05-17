@@ -98,6 +98,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
             'quiet': True,
             'no_warnings': True,
+            'noplaylist': True,
             'extractor_args': {
                 'youtube': {
                     'player_client': ['android'],
@@ -128,7 +129,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif quality == "360":
             ydl_opts = {
                 **common,
-                'format': 'bv*[height<=360]+ba/b',
+                'format': 'bestvideo[height<=360]+bestaudio/best',
                 'merge_output_format': 'mp4',
             }
 
@@ -139,7 +140,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif quality == "720":
             ydl_opts = {
                 **common,
-                'format': 'bv*[height<=720]+ba/b',
+                'format': 'bestvideo[height<=720]+bestaudio/best',
                 'merge_output_format': 'mp4',
             }
 
