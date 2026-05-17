@@ -70,34 +70,25 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if os.path.exists('cookies.txt'):
         cookie_opts['cookiefile'] = 'cookies.txt'
 
-    try:
+   try:
         if quality == "mp3":
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'quiet': True,
                 **cookie_opts,
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
             }
         elif quality == "360":
             ydl_opts = {
-                # 360p prefer karo, nahi mila toh best available le lo
-                'format': 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best',
+                'format': 'best[height<=360]/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'merge_output_format': 'mp4',
                 'quiet': True,
                 **cookie_opts,
             }
         elif quality == "720":
             ydl_opts = {
-                # 720p prefer karo, nahi mila toh best available le lo
-                'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+                'format': 'best[height<=720]/best',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-                'merge_output_format': 'mp4',
                 'quiet': True,
                 **cookie_opts,
             }
