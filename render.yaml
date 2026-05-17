@@ -2,5 +2,5 @@ services:
   - type: web
     name: telegram-bot
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python bot.py
+    buildCommand: "pip install -r requirements.txt && apt-get install -y nodejs npm"
+    startCommand: "python bot.py"
