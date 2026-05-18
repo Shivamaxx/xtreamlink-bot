@@ -96,28 +96,28 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             }
 
         # Video Download
-       else:
+              else:
 
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-        'quiet': True,
-        'cookiefile': 'cookies.txt',
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                'cookiefile': 'cookies.txt',
 
-        'socket_timeout': 60,
-        'retries': 10,
+                'socket_timeout': 60,
+                'retries': 10,
 
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0',
-            'Referer': 'https://www.terabox.com/',
-        },
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'https://www.terabox.com/',
+                },
 
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android']
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android']
+                    }
+                },
             }
-        },
-    }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = ydl.prepare_filename(info)
