@@ -3,6 +3,7 @@ asyncio.set_event_loop(asyncio.new_event_loop())
 
 from flask import Flask
 from threading import Thread
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -14,12 +15,8 @@ from telegram.ext import (
 
 import yt_dlp
 import os
-import glob
 
-# =========================
-# Flask Keep Alive
-# =========================
-
+# Flask server for Render
 app_web = Flask('')
 
 @app_web.route('/')
@@ -31,26 +28,17 @@ def run():
 
 Thread(target=run).start()
 
-# =========================
-# Telegram Bot Setup
-# =========================
-
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# Store user links
 user_links = {}
-
-# =========================
-# Handle YouTube Link
-# =========================
 
 async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = update.message.text
-    chat_id = update.message.chat.id
-
-    user_links[chat_id] = url
+    user_links[update.message.chat_id] = url
 
     keyboard = [
         [
@@ -69,16 +57,12 @@ async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-# =========================
-# Download Handler
-# =========================
-
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     quality = query.data
-    chat_id = query.message.chat.id
+    chat_id = query.message.chat_id
 
     url = user_links.get(chat_id)
 
@@ -88,33 +72,22 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_text("⏳ Downloading...")
 
-    cookie_opts = {}
-
-    if os.path.exists('cookies.txt'):
-        cookie_opts['cookiefile'] = 'cookies.txt'
-
     try:
-        common = {
-            'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
-            'quiet': True,
-            'no_warnings': True,
-            'noplaylist': True,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android'],
-                }
-            },
-            **cookie_opts,
-        }
 
-        # =========================
-        # MP3
-        # =========================
-
+        # MP3 Download
         if quality == "mp3":
+
             ydl_opts = {
-                **common,
                 'format': 'bestaudio/best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                'cookiefile': 'cookies.txt',
+
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'https://www.terabox.com/',
+                },
+
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -122,109 +95,56 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }],
             }
 
-        # =========================
-        # 360p
-        # =========================
+        # Video Download
+        else:
 
-        elif quality == "360":
             ydl_opts = {
-                **common,
-                'format': 'bestvideo[height<=360]+bestaudio/best',
-                'merge_output_format': 'mp4',
+                'format': 'best',
+                'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
+                'quiet': True,
+                'cookiefile': 'cookies.txt',
+
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'https://www.terabox.com/',
+                },
+
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android']
+                    }
+                },
             }
-
-        # =========================
-        # 720p
-        # =========================
-
-        elif quality == "720":
-            ydl_opts = {
-                **common,
-                'format': 'bestvideo[height<=720]+bestaudio/best',
-                'merge_output_format': 'mp4',
-            }
-
-        # =========================
-        # Download
-        # =========================
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            file_path = ydl.prepare_filename(info)
 
-            base_path = ydl.prepare_filename(info)
-            base_no_ext = os.path.splitext(base_path)[0]
+            if quality == "mp3":
+                file_path = os.path.splitext(file_path)[0] + ".mp3"
 
-        # =========================
-        # File Detection
-        # =========================
-
+        # Send Audio
         if quality == "mp3":
-            file_path = base_no_ext + ".mp3"
 
-        else:
-            mp4_path = base_no_ext + ".mp4"
-
-            if os.path.exists(mp4_path):
-                file_path = mp4_path
-
-            else:
-                matches = glob.glob(base_no_ext + ".*")
-
-                if matches:
-                    file_path = matches[0]
-                else:
-                    file_path = base_path
-
-        # =========================
-        # File Exists Check
-        # =========================
-
-        if not os.path.exists(file_path):
-            await query.message.reply_text(
-                "❌ File download nahi hui. Dobara try karo."
-            )
-            return
-
-        # =========================
-        # Send File
-        # =========================
-
-        if quality == "mp3":
             with open(file_path, "rb") as audio:
                 await query.message.reply_audio(audio=audio)
 
+        # Send Video
         else:
+
             with open(file_path, "rb") as video:
                 await query.message.reply_video(video=video)
 
-        # =========================
-        # Cleanup
-        # =========================
-
+        os.remove(file_path)
         user_links.pop(chat_id, None)
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
 
     except Exception as e:
         await query.message.reply_text(f"❌ Error: {e}")
 
-# =========================
-# Start Bot
-# =========================
-
-print("BOT TOKEN:", BOT_TOKEN)
-
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-app.add_handler(
-    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_link)
-)
-
-app.add_handler(
-    CallbackQueryHandler(button_click)
-)
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_link))
+app.add_handler(CallbackQueryHandler(button_click))
 
 print("🚀 Bot Running...")
-
 app.run_polling()
