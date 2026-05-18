@@ -83,6 +83,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'quiet': True,
                 'cookiefile': 'cookies.txt',
 
+                'socket_timeout': 60,
+                'retries': 10,
+
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0',
                     'Referer': 'https://www.terabox.com/',
@@ -96,7 +99,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             }
 
         # Video Download
-              else:
+        else:
 
             ydl_opts = {
                 'format': 'best',
@@ -118,6 +121,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     }
                 },
             }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = ydl.prepare_filename(info)
@@ -137,7 +141,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(file_path, "rb") as video:
                 await query.message.reply_video(video=video)
 
-        os.remove(file_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
         user_links.pop(chat_id, None)
 
     except Exception as e:
