@@ -102,7 +102,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
 
             ydl_opts = {
-                'format': 'best',
+                'format': 'bv*+ba/b',
                 'outtmpl': f'{DOWNLOAD_DIR}/%(title)s.%(ext)s',
                 'quiet': True,
                 'cookiefile': 'cookies.txt',
