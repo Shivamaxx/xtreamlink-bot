@@ -116,9 +116,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 },
 
                 'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android']
-                    },
                     'instagram': {
                         'api_version': ['v1']
                     },
